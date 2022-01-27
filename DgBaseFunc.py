@@ -1,7 +1,5 @@
-import pandas, numpy, scipy, math, gc
+import pandas, numpy, scipy, math
 import scipy.linalg
-from anytree import Node
-from anytree.search import findall
 
 def look_up_table():
     ''' construct a look-up table, storing DGGS resolution, corresponding cell size, cell area, and vertical resolution '''
@@ -94,6 +92,21 @@ def neighbor_navig_by_rings(res,coords,df,rings=1):
     elev_neighbor = [catch(lambda: df['model_elev'].loc[ij]) for ij in coords_neighbor]
     return elev_neighbor
 
+def edge_navig_by_rings(res,coords,rings=1):
+    ''' navigate among neighborhood defined by ring numbers (default 1), 
+    return elevation values of neighbors + center cell '''
+    i = 1
+    coords_edge = [coords]
+    coords_neighbor = [coords]
+    while i <= rings:
+        i += 1
+        coords_neighbor_ = coords_neighbor
+        for c in coords_edge:
+            coords_neighbor = coords_neighbor + neighbor_coords(res,c)[1:]
+        coords_neighbor = list(set(coords_neighbor))
+        coords_edge = [x for x in coords_neighbor if x not in coords_neighbor_]
+    return coords_edge
+
 def hex_dist(coord1,coord2,res):
     ''' calculate hex distance represented by ring number '''
     i_ = coord1[0] - coord2[0]
@@ -102,9 +115,9 @@ def hex_dist(coord1,coord2,res):
         ring = max(abs(i_),abs(j_))
     else:
         ring = abs(i_) + abs(j_)
-    
     if res%2 == 1:
-        ring = math.ceil(ring/2)
+        # ring = math.ceil(ring/2)
+        ring = round(ring/numpy.sqrt(3))
     return ring
 
 def hex_dist_l(coord,coords_target,res):
@@ -114,7 +127,7 @@ def hex_dist_l(coord,coords_target,res):
     min_dist = min(dist_ls)
     return min_dist
 
-def hex_dist_m(coord,coords_target,res):
+def hex_dist_m(coord,coords_target,res,thred=30):
     ''' calculate hex distance from one coord to a list of target coords (if there are a lot), 
     represented by ring number '''
     i = 0
@@ -127,7 +140,7 @@ def hex_dist_m(coord,coords_target,res):
             coords_neighbor = coords_neighbor + neighbor_coords(res,c)[1:]
         coords_neighbor = list(set(coords_neighbor))
         coords_edge = [x for x in coords_neighbor if x not in coords_neighbor_]
-        if i > 20:
+        if i > thred:
             i = numpy.nan
             break
     return i

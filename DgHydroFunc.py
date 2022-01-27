@@ -1,6 +1,8 @@
 import numpy as np
+import pandas as pd
+import math
 import DgBaseFunc
-import pandas
+
 
 def flow_direction_restricted(asp,res):
     if res%2 == 1:
@@ -39,7 +41,7 @@ def pits_and_flat_df(dataframe,res,elev_df):
                 pending_i.append(i)
                 pending_j.append(j)
                 pending_elev.append(elev_neighbor[0])
-    pending_df = pandas.DataFrame(list(zip(pending_i,pending_j,pending_elev)), columns =['i','j','elev'])
+    pending_df = pd.DataFrame(list(zip(pending_i,pending_j,pending_elev)), columns =['i','j','elev'])
     pending_df = pending_df.set_index(['i', 'j'])
     return pending_df
 
@@ -97,7 +99,7 @@ def check_closed_loop(coords,res,elev_df):
             
 def check_closed_loop_df(dataframe,res,elev_df):
     ''' check if there are any closed loops in a dataframe '''
-    close_loop_df = pandas.DataFrame(columns = ['flow_path'])
+    close_loop_df = pd.DataFrame(columns = ['flow_path'])
     for coords in dataframe.index.values:
         flowto_coords,flow_path = check_closed_loop(coords,res,elev_df)
         if flowto_coords is not None:
@@ -124,4 +126,27 @@ def inflow_count_restricted_df(dataframe,res,elev_df):
     dataframe['inflow'] = [inflow_count_restricted(ij,res,elev_df) for ij in dataframe.index.values]
     return dataframe
 
+def TWI_calcu(alpha,beta):
+    ''' Topographic wetness index (TWI) '''
+    if beta == 0:
+        TWI_value = np.nan
+    else:
+        beta_rad = math.radians(beta)
+        TWI_value = math.log(alpha/math.tan(beta_rad))
+    return TWI_value
+    
+def SPI_calcu(alpha,beta):
+    ''' Stream power index (SPI) '''
+    beta_rad = math.radians(beta)
+    SPI_value = alpha * math.tan(beta_rad)
+    return SPI_value
 
+def TWI_df(dataframe):
+    dataframe['tWi'] = np.nan
+    dataframe['twi'] = [TWI_calcu(a,b) for a,b in zip(dataframe['contri_area'],dataframe['gradient_deg'])]
+    return dataframe
+
+def SPI_df(dataframe):
+    dataframe['spi'] = np.nan
+    dataframe['spi'] = [SPI_calcu(a,b) for a,b in zip(dataframe['contri_area'],dataframe['gradient_deg'])]
+    return dataframe
