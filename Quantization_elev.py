@@ -1,13 +1,14 @@
-import GeoBaseFunc as gbfc
-import DgBaseFunc as dbfc
+import functools
 import pandas as pd
 import geopandas as gpd
 import multiprocess as mp
+import GeoBaseFunc as gbfc
+import DgBaseFunc as dbfc
 import warnings,sys,time
 
 warnings.simplefilter('error', RuntimeWarning) 
 
-# set resolution level and study area
+# set resolution level
 dggs_res = int(sys.argv[1])
 
 # look up cellsize and vertical resolution
@@ -27,14 +28,15 @@ extent = gpd.GeoDataFrame.from_file('Data/NB_area_wgs84.shp')
 centroid_gdf = centroid_gdf[centroid_gdf.geometry.within(extent.geometry[0])]
 
 # non-parallel
-centroid_gdf = gbfc.bilinear_interp_df('Data/NB_DTM_O_30_wgs84.tif','model_elev',centroid_gdf,'lon_c','lat_c')
+bilinear_interp_df_p = functools.partial(gbfc.bilinear_interp_df,tif='Data/NB_DTM_O_30_wgs84.tif',var='model_elev',x_col='lon_c',y_col='lat_c')
+centroid_gdf = bilinear_interp_df_p(centroid_gdf)
 centroid_gdf['model_elev'] = [round(elev,vertical_res) for elev in centroid_gdf['model_elev']]
 
 # # call the function by parallel processing
 # n_cores = int(os.environ.get('SLURM_CPUS_PER_TASK',default=1))
 # centroid_df_split = np.array_split(centroid_gdf, n_cores)
 # pool = mp.Pool(processes = n_cores)
-# centroid_gdf = pd.concat(pool.map(gbfc.bilinear_interp_df, centroid_df_split))
+# centroid_gdf = pd.concat(pool.map(bilinear_interp_df_p, centroid_df_split))
 # pool.close()
 # pool.join()
 

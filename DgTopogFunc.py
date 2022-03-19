@@ -206,8 +206,7 @@ def hillshade(coords,df,res,altitude=45,azimuth=315):
 def roughness(coords,df,res,vertical_res,rings=1):
     '''
     remove voids in neighbors
-    calculate descriptive stats -- 
-    mean, max, min, median, std, range
+    calculate terrain roughness as the absolute difference bewteen max and min in neighborhood
     '''
     elev_neighbor = dbfc.neighbor_navig_by_rings(res,coords,df,rings)
     elev_neighbor = [x for x in elev_neighbor if x != -32767 and not np.isnan(x)]
@@ -243,32 +242,32 @@ def TPI_calcu(coords,res,elev_df):
         TPI_value = elev_neighbor[0] - (sum(TPI_ls) / len(TPI_ls))
     return TPI_value
 
-def slope_aspect_df(elev_df,dataframe,method,res,cell_spacing):
+def slope_aspect_df(dataframe,elev_df,method,res,cell_spacing):
     ''' calculate slope and aspect by specified method '''
-    dataframe['gradient_deg'] = dataframe['aspect_deg'] = np.nan
+    dataframe['slp'] = dataframe['asp'] = np.nan
     if method == 'MAG':
-        dataframe[['gradient_deg','aspect_deg']] = [slope_MAG(ij,elev_df,res,cell_spacing) for ij in dataframe.index.values]
+        dataframe[['slp','asp']] = [slope_MAG(ij,elev_df,res,cell_spacing) for ij in dataframe.index.values]
     elif method == 'MDG':
-        dataframe[['gradient_deg','aspect_deg']] = [slope_MDG(ij,elev_df,res,cell_spacing) for ij in dataframe.index.values]
+        dataframe[['slp','asp']] = [slope_MDG(ij,elev_df,res,cell_spacing) for ij in dataframe.index.values]
     elif method == 'MDN':
-        dataframe[['gradient_deg','aspect_deg']] = [slope_MDN(ij,elev_df,res,cell_spacing) for ij in dataframe.index.values]
+        dataframe[['slp','asp']] = [slope_MDN(ij,elev_df,res,cell_spacing) for ij in dataframe.index.values]
     elif method == 'FDA':
-        dataframe[['gradient_deg','aspect_deg']] = [slope_FDA(ij,elev_df,res,cell_spacing) for ij in dataframe.index.values]
+        dataframe[['slp','asp']] = [slope_FDA(ij,elev_df,res,cell_spacing) for ij in dataframe.index.values]
     elif method == 'BFP':
-        dataframe[['gradient_deg','aspect_deg']] = [slope_BFP(ij,elev_df,res,cell_spacing) for ij in dataframe.index.values]
+        dataframe[['slp','asp']] = [slope_BFP(ij,elev_df,res,cell_spacing) for ij in dataframe.index.values]
     return dataframe
 
-def curvature_df(elev_df,dataframe,res,cell_spacing):
+def curvature_df(dataframe,elev_df,res,cell_spacing):
     dataframe['curv'] = np.nan
     dataframe['curv'] = [curvature(ij,elev_df,res,cell_spacing) for ij in dataframe.index.values]
     return dataframe
 
-def hillshade_df(elev_df,dataframe,res):
+def hillshade_df(dataframe,elev_df,res):
     dataframe['hs'] = np.nan
     dataframe['hs'] = [hillshade(ij,res,elev_df) for ij in dataframe.index.values]
     return dataframe
 
-def roughness_df(elev_df,dataframe,res,vertical_res,rings=1):
+def roughness_df(dataframe,elev_df,res,vertical_res,rings=1):
     dataframe['rgh'] = np.nan
     dataframe['rgh'] = [roughness(ij,elev_df,res,vertical_res) for ij in dataframe.index.values]
     return dataframe
@@ -282,3 +281,6 @@ def TPI_df(dataframe,res,elev_df):
     dataframe['tpi'] = np.nan
     dataframe['tpi'] = [TPI_calcu(ij,res,elev_df) for ij in dataframe.index.values]
     return dataframe
+
+if __name__=='__main__':
+    pass

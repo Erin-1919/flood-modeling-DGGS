@@ -29,10 +29,7 @@ def common_member(a, b):
     ''' check if two lists have at-least one element common '''
     a_set = set(a)
     b_set = set(b)
-    if (a_set & b_set):
-        return True 
-    else:
-        return False
+    return (a_set & b_set)
     
 def catch(func, handle = lambda e : e, *args, **kwargs):
     ''' Handle the try except in a general function'''
@@ -44,25 +41,36 @@ def catch(func, handle = lambda e : e, *args, **kwargs):
 def edge_cell_exist(ls):
     ''' determine if edge cell exists in the neighborhood '''
     cell_ls = [x for x in ls if x != -32767 and not numpy.isnan(x)]
-    if len(cell_ls) != 7:
-        return True
-    else:
-        return False
+    return len(cell_ls) != 7
 
-def edge_cell(res,coords,df):
-    elev_neighbor = neighbor_navig(res,coords,df)
-    if edge_cell_exist(elev_neighbor):
-        return True
-    else:
-        return False
-
-def edge_cell_ls(res,df):
+def edge_cell(res,coords,allcell):
+    neighbor = neighbor_coords(res,coords)[1:]
+    neighbor_in = [i in allcell for i in neighbor]
+    neighbor_filt = list(filter(lambda x: x is True,neighbor_in))
+    return len(neighbor_filt) != 6
+    
+def edge_cell_df(df,res,allcell):
     ls = []
     for ij in df.index.values:
-        elev_neighbor = neighbor_navig(res,ij,df)
-        if edge_cell_exist(elev_neighbor):
+        if edge_cell(res,ij,allcell):
             ls.append(ij)
-    return ls
+    df_out = df[df.index.isin(ls)]
+    return df_out
+
+def edge_cell_chain(res,coords,allcell):
+    chain = [coords]
+    nxt = numpy.nan
+    while nxt != coords:
+        c = chain[-1]
+        neighbor = neighbor_coords(res,c)[1:]
+        neighbor_in = [i for i in neighbor if i in allcell]
+        for n in neighbor_in:
+            if edge_cell(res,n,allcell) and (n not in chain[1:]):
+                nxt = n
+                if nxt != coords:
+                    chain.append(nxt)
+                break
+    return chain
 
 def neighbor_coords(res,coords):
     ''' find out the ij coordinates within the neighborhood -- 6 neighbors + center cell '''
@@ -281,3 +289,14 @@ def second_derivative(res,elev_neighbor):
         d_zx2 = d_zj2 * math.cos(math.pi/6) + d_zk2 * math.cos(math.pi/6)
         d_zy2 = d_zi2 + d_zj2 * math.sin(math.pi/6) - d_zk2 * math.sin(math.pi/6)
     return d_zx2, d_zy2
+
+def hex_dist_comb_df(dataframe,coords_target,var,res):
+    dataframe[var] = [hex_dist_m(coord,coords_target,res) for coord in list(dataframe.index.values)]
+    df_done = dataframe.dropna(subset=[var])
+    df_left = dataframe[numpy.isnan(dataframe[var])]
+    df_left[var] = [hex_dist_l(coord,coords_target,res) for coord in list(df_left.index.values.tolist())]
+    dataframe = pandas.concat([df_done,df_left])
+    return dataframe
+
+if __name__=='__main__':
+    pass

@@ -1,8 +1,7 @@
 import numpy as np
 import pandas as pd
 import math
-import DgBaseFunc
-
+import DgBaseFunc as dbfc
 
 def flow_direction_restricted(asp,res):
     if res%2 == 1:
@@ -19,9 +18,9 @@ def flow_direction_restricted(asp,res):
 
 def flow_direction_restricted_df(dataframe,res):
     ''' calculate flow direction among normal area, leave pits and flat area as NaN '''
-    dataframe['aspect_deg'] = [i if i != -1 else np.nan for i in dataframe['aspect_deg']]
+    dataframe['asp'] = [i if i != -1 else np.nan for i in dataframe['asp']]
     dataframe['direction_code'] = np.nan
-    dataframe['direction_code'] = [flow_direction_restricted(i,res) if not np.isnan(i) else np.nan for i in dataframe['aspect_deg']]
+    dataframe['direction_code'] = [flow_direction_restricted(i,res) if not np.isnan(i) else np.nan for i in dataframe['asp']]
     return dataframe
 
 def pits_and_flat_df(dataframe,res,elev_df):
@@ -32,8 +31,8 @@ def pits_and_flat_df(dataframe,res,elev_df):
     pending_elev = []
     for coords in dataframe.index.values:
         i,j = coords[0],coords[1]
-        elev_neighbor = DgBaseFunc.neighbor_navig(res,coords,elev_df)
-        if DgBaseFunc.edge_cell_exist(elev_neighbor):
+        elev_neighbor = dbfc.neighbor_navig(res,coords,elev_df)
+        if dbfc.edge_cell_exist(elev_neighbor):
             pass
         else:
             neighbor = elev_neighbor[1:]
@@ -54,7 +53,7 @@ def flow_to_cell(coords,res,elev_df):
                 return -1
             else:
                 direct = int(direc)
-                neighbor_flowto_coords = DgBaseFunc.neighbor_coords(res,coords)[direct]
+                neighbor_flowto_coords = dbfc.neighbor_coords(res,coords)[direct]
                 if neighbor_flowto_coords in list(elev_df.index.values):
                     return neighbor_flowto_coords
     except KeyError:
@@ -68,7 +67,7 @@ def upslope_restricted(coords,res,elev_df):
     all have their values decreased by 1 '''
     direct = int(elev_df['direction_code'].loc[coords])
     upslope = int(elev_df['upslope'].loc[coords])
-    neighbor_flowto = DgBaseFunc.neighbor_coords(res,coords)
+    neighbor_flowto = dbfc.neighbor_coords(res,coords)
     try:
         elev_df.at[neighbor_flowto[direct],'upslope'] += upslope
         if elev_df.at[neighbor_flowto[direct],'inflow'] < 0:
@@ -113,7 +112,7 @@ def check_closed_loop_df(dataframe,res,elev_df):
 
 def inflow_count_restricted(coords,res,elev_df):
     ''' count inflow cells, ranging from zero to six meaning none to all of the neighbors '''
-    neighbor_direc = DgBaseFunc.neighbor_direc_navig(res,coords,elev_df)
+    neighbor_direc = dbfc.neighbor_direc_navig(res,coords,elev_df)
     count = 0
     direction_ls = [4,5,6,1,2,3]
     for i in range(1,7):
@@ -142,11 +141,14 @@ def SPI_calcu(alpha,beta):
     return SPI_value
 
 def TWI_df(dataframe):
-    dataframe['tWi'] = np.nan
-    dataframe['twi'] = [TWI_calcu(a,b) for a,b in zip(dataframe['contri_area'],dataframe['gradient_deg'])]
+    dataframe['twi'] = np.nan
+    dataframe['twi'] = [TWI_calcu(a,b) for a,b in zip(dataframe['contri_area'],dataframe['slp'])]
     return dataframe
 
 def SPI_df(dataframe):
     dataframe['spi'] = np.nan
-    dataframe['spi'] = [SPI_calcu(a,b) for a,b in zip(dataframe['contri_area'],dataframe['gradient_deg'])]
+    dataframe['spi'] = [SPI_calcu(a,b) for a,b in zip(dataframe['contri_area'],dataframe['slp'])]
     return dataframe
+
+if __name__=='__main__':
+    pass

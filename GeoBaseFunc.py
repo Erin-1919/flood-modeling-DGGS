@@ -82,23 +82,21 @@ def IDW_interp(z,dist,power=2):
     idw_values = np.sum(z[None,:] * idist, axis=1) / np.sum(idist, axis=1)
     return idw_values
 
-def nearest_interp_df(tif,var,df,x_col,y_col):
+def nearest_interp_df(df,tif,var,x_col,y_col):
     ''' Extract value from tif '''
-    df[var] = np.nan
     TIF = rasterio.open(tif)
     coords = [(lon,lat) for lon, lat in zip(df[x_col], df[y_col])]
     df[var] = [catch(lambda: i[0]) for i in TIF.sample(coords)]
+    # df[var] = [x[0] if x.mask.ndim == 1 and not x.mask[0] else np.nan for x in rasterio.sample.sample_gen(TIF, coords, masked=True)]
     return df
 
-def bilinear_interp_df(tif,var,df,x_col,y_col):
+def bilinear_interp_df(df,tif,var,x_col,y_col):
     ''' Extract value from tif '''
-    df[var] = np.nan
     TIF = rasterio.open(tif)
     df[var] = [bilinear_interp(lon,lat,TIF) for lon, lat in zip(df[x_col], df[y_col])]
     return df
 
-def IDW_interp_df(cdf,normal,month,var,df,res):
-    df[var] = np.nan
+def IDW_interp_df(df,cdf,normal,month,var,res):
     ''' IDW interpolation '''
     cdf = cdf[cdf['MONTH'] == month]
     cdf = cdf[cdf['E_NORMAL_E'] == normal]
@@ -109,5 +107,10 @@ def IDW_interp_df(cdf,normal,month,var,df,res):
     df[var] = IDW_interp(station_value,ring_arr)
     return df
 
+def reproject_coords_df(df,x_col,y_col,x_new,y_new):
+    df[[x_new,y_new]] = [reproject_coords(x,y) for x,y in zip(df[x_col], df[y_col])]
+    return df
 
+if __name__=='__main__':
+    pass
 
