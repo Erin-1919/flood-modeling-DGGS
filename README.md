@@ -250,7 +250,7 @@ If you use this code in your research, please cite the original paper:
 ```bibtex
 @article{flood_modeling_dggs_2022,
   title={Multi-Scale Flood Mapping under Climate Change Scenarios in Hexagonal Discrete Global Grids},
-  author={Erin, S. and others},
+  author={Li, M.; McGrath, H.; Stefanakis, E.},
   journal={ISPRS International Journal of Geo-Information},
   volume={11},
   number={12},
